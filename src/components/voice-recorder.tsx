@@ -16,12 +16,12 @@ interface VoiceRecorderProps {
 export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [timer, setTimer] = useState(0);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -57,11 +57,23 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
       audioChunks.current = [];
 
       mediaRecorder.current.ondataavailable = (event) => {
-        audioChunks.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
       };
 
       mediaRecorder.current.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: options.mimeType });
+        
+        // Stop all media tracks to release the microphone
+        stream.getTracks().forEach(track => track.stop());
+
+        if (audioBlob.size === 0) {
+          toast({ variant: 'destructive', title: 'Recording Error', description: 'No audio was recorded.' });
+          setIsProcessing(false);
+          return;
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
@@ -85,7 +97,6 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
             setIsProcessing(false);
           }
         };
-        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.current.start();
