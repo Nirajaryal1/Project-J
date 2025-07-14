@@ -52,7 +52,8 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder.current = new MediaRecorder(stream);
+      const options = { mimeType: 'audio/webm;codecs=opus' };
+      mediaRecorder.current = new MediaRecorder(stream, options);
       audioChunks.current = [];
 
       mediaRecorder.current.ondataavailable = (event) => {
@@ -60,7 +61,7 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
       };
 
       mediaRecorder.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunks.current, { type: options.mimeType });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
