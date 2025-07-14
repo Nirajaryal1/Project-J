@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { type JournalEntry } from '@/lib/types';
@@ -31,8 +32,10 @@ export function JournalEntryCard({ entry }: JournalEntryCardProps) {
   const [detailedFormattedDate, setDetailedFormattedDate] = useState('');
 
   useEffect(() => {
-    setFormattedDate(new Date(entry.date).toLocaleString());
-    setDetailedFormattedDate(new Date(entry.date).toLocaleString('en-US', {
+    // Dates are formatted on the client-side to avoid hydration errors.
+    const date = new Date(entry.date);
+    setFormattedDate(date.toLocaleString());
+    setDetailedFormattedDate(date.toLocaleString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -52,7 +55,7 @@ export function JournalEntryCard({ entry }: JournalEntryCardProps) {
             <CardTitle className="font-headline text-lg truncate">{entry.summary}</CardTitle>
             <CardDescription className="flex items-center gap-2 text-xs">
               <Calendar className="h-3 w-3" />
-              {formattedDate}
+              {formattedDate || '...'}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
@@ -69,7 +72,7 @@ export function JournalEntryCard({ entry }: JournalEntryCardProps) {
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">Journal Entry</DialogTitle>
           <DialogDescription>
-            {detailedFormattedDate}
+            {detailedFormattedDate || '...'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
