@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { type JournalEntry } from '@/lib/types';
 import {
   Card,
@@ -26,6 +27,23 @@ interface JournalEntryCardProps {
 }
 
 export function JournalEntryCard({ entry }: JournalEntryCardProps) {
+  const [formattedDate, setFormattedDate] = useState('');
+  const [detailedFormattedDate, setDetailedFormattedDate] = useState('');
+
+  useEffect(() => {
+    setFormattedDate(new Date(entry.date).toLocaleString());
+    setDetailedFormattedDate(new Date(entry.date).toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
+  }, [entry.date]);
+
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -34,7 +52,7 @@ export function JournalEntryCard({ entry }: JournalEntryCardProps) {
             <CardTitle className="font-headline text-lg truncate">{entry.summary}</CardTitle>
             <CardDescription className="flex items-center gap-2 text-xs">
               <Calendar className="h-3 w-3" />
-              {new Date(entry.date).toLocaleString()}
+              {formattedDate}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
@@ -51,14 +69,7 @@ export function JournalEntryCard({ entry }: JournalEntryCardProps) {
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">Journal Entry</DialogTitle>
           <DialogDescription>
-            {new Date(entry.date).toLocaleString('en-US', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
+            {detailedFormattedDate}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
