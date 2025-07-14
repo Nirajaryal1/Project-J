@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mic, Square, Loader2 } from 'lucide-react';
@@ -16,11 +16,16 @@ interface VoiceRecorderProps {
 export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [timer, setTimer] = useState(0);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<Blob[]>([]);
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -36,6 +41,15 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
   };
 
   const handleStartRecording = async () => {
+    if (typeof window === 'undefined' || !navigator.mediaDevices) {
+      toast({
+        variant: 'destructive',
+        title: 'Unsupported Browser',
+        description: 'Audio recording is not supported in this environment.',
+      });
+      return;
+    }
+    
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream);
@@ -70,7 +84,6 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
             setIsProcessing(false);
           }
         };
-        // Clean up media stream
         stream.getTracks().forEach(track => track.stop());
       };
 
@@ -119,7 +132,7 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
         </div>
         <Button
           onClick={isRecording ? handleStopRecording : handleStartRecording}
-          disabled={isProcessing}
+          disabled={isProcessing || !isClient}
           size="lg"
           className="w-48 h-16 rounded-full text-lg transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:scale-105 bg-accent hover:bg-accent/90 text-accent-foreground"
         >
