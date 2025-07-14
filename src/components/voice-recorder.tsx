@@ -22,6 +22,7 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
   const timerInterval = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -52,6 +53,7 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
     
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const options = { mimeType: 'audio/webm;codecs=opus' };
       mediaRecorder.current = new MediaRecorder(stream, options);
       audioChunks.current = [];
@@ -65,8 +67,10 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
       mediaRecorder.current.onstop = async () => {
         const audioBlob = new Blob(audioChunks.current, { type: options.mimeType });
         
-        // Stop all media tracks to release the microphone
-        stream.getTracks().forEach(track => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
 
         if (audioBlob.size === 0) {
           toast({ variant: 'destructive', title: 'Recording Error', description: 'No audio was recorded.' });
@@ -127,6 +131,9 @@ export function VoiceRecorder({ onNewEntry }: VoiceRecorderProps) {
   useEffect(() => {
     return () => {
       stopTimer();
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
     };
   }, []);
 
